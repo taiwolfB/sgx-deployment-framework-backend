@@ -394,7 +394,8 @@ public class DeploymentService {
         script.add("pwd");
         script.add("cd /home/azureuser/sgx-deployment-framework-remote-attestation");
         script.add("pwd");
-        script.add("sudo ./run-client " + backendIpLocation + ":8085 -a " + deploymentFileLocation);
+//        script.add("sudo ./run-client " + backendIpLocation + ":8085 -a " + deploymentFileLocation);
+        script.add("sudo ./run-client -a " + deploymentFileLocation  + backendIpLocation + ":8085");
         script.add("./" + deploymentFileLocation);
         return script;
     }
