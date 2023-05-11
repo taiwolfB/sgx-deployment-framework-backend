@@ -338,8 +338,11 @@ public class DeploymentService {
                     .virtualMachines()
                     .runCommand(resourceGroup.name(), virtualMachine.name(), startSGXClientCommand);
             webSocketDeploymentLogDto.setMessage("");
-            startSGXClientCommandResult.value().forEach(result ->
-                    webSocketDeploymentLogDto.setMessage(webSocketDeploymentLogDto.getMessage() + result.message() + "\n"));
+            startSGXClientCommandResult.value().forEach(result -> {
+                webSocketDeploymentLogDto.setMessage(result.message());
+                webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+                log.info(result.message());
+            });
             webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
 
             responseDeploymentDto.setMessage("Deployment success!");
