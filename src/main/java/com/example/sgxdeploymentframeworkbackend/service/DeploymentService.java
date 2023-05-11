@@ -391,6 +391,8 @@ public class DeploymentService {
     private List<String> createSgxClientScript(String deploymentFileLocation, String backendIpLocation) {
         List<String> script = new ArrayList<>();
 //        script.add("cd $HOME/sgx-deployment-framework-remote-attestation");
+        script.add("pwd");
+        script.add("cd /");
         script.add("sudo ./run-client " + backendIpLocation + ":8085 -a " + deploymentFileLocation);
         script.add("./" + deploymentFileLocation);
         return script;
