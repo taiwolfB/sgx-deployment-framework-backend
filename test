@@ -1,0 +1,107 @@
+//    @PostMapping("/authorize")
+//    public AuthDto authorizeAzureAccount() throws Exception {
+//        /*
+//         working MINE
+//         */
+//        deploymentConstants.setLoginCodeIncrement(deploymentConstants.getLoginCodeIncrement() + 1);
+//        String codeFilePath = "login-session" + deploymentConstants.getLoginCodeIncrement() + ".txt";
+//        String scriptPath = resolveFilePath("authorize_script.py");
+//        ProcessBuilder processBuilder = new
+//                ProcessBuilder("python3", scriptPath, codeFilePath)
+//                .inheritIO();
+//
+//        Process workerProcess = processBuilder.start();
+//        Thread.sleep(2000);
+//        workerProcess.destroyForcibly();
+//
+//
+//        BufferedReader bufferedReader = new BufferedReader(new FileReader(resolveFilePath(codeFilePath)));
+//        String deviceCode = "";
+//        while ((deviceCode = bufferedReader.readLine()) != null) {
+//            log.info(deviceCode);
+//            WebSocketDto webSocketDto = new WebSocketDto();
+//            webSocketDto.setUrl("https://microsoft.com/devicelogin");
+//            webSocketDto.setDeviceCode(deviceCode.substring(100, 109));
+//            webSocketListener.pushSystemStatusToWebSocket(webSocketDto);
+//        }
+//        bufferedReader.close();
+//        AuthDto authDto = new AuthDto("Successfully provisioned the login code.");
+//        return authDto;
+//
+//        /// pana aici e  al meu si merge
+//
+////        DeviceCodeCredential deviceCodeCredential = new DeviceCodeCredentialBuilder()
+////                .challengeConsumer(challenge -> {
+////                    // lets user know of the challenge
+////                    System.out.println(challenge.getMessage());
+////                }).build();
+////
+////
+//////        SubscriptionManager subscriptionManager = SubscriptionManager.authenticate(deviceCodeCredential, azureProfile);
+////        AzureProfile profile = new AzureProfile(AzureEnvironment.AZURE);
+////
+////
+//////                SecretClient client = new SecretClientBuilder()
+//////                .vaultUrl("https://testbodoo.vault.azure.net/")
+//////                .credential(deviceCodeCredential)
+//////                .buildClient();
+//////        System.out.println(client.getSecret("test1").getValue());
+////        TokenCredential credential = new DefaultAzureCredentialBuilder()
+////        .authorityHost(profile.getEnvironment().getActiveDirectoryEndpoint())
+////        .build();
+////        AzureResourceManager azure = AzureResourceManager
+////                .authenticate(credential, profile)
+////                .withDefaultSubscription();
+////
+//
+////
+//
+//        /// CHATGPT
+////        // Replace these values with your Azure subscription ID and credentials
+////        String subscriptionId = "YOUR_SUBSCRIPTION_ID";
+////        String clientId = "YOUR_CLIENT_ID";
+////        String clientSecret = "YOUR_CLIENT_SECRET";
+////        String tenantId = "YOUR_TENANT_ID";
+////
+//////         Create an AzureProfile object with your Azure environment details
+////         AzureProfile profile = new AzureProfile(AzureEnvironment.AZURE);
+////
+////
+//////         Authenticate with your Azure credentials
+////        AzureResourceManager.Authenticated azureAuth = AzureResourceManager.configure()
+////                .withLogLevel(com.azure.core.http.policy.HttpLogDetailLevel.BODY_AND_HEADERS)
+////                .authenticate(credential, profile)
+////
+////        // Get all resource groups in the subscription
+////        for (ResourceGroup rg : azureAuth.resourceGroups().list()) {
+////            System.out.println(rg.name());
+////        }
+//
+//    }
+
+//    @GetMapping("/is-authorized")
+//    public AuthDto isAuthorized() throws InterruptedException, IOException {
+////        System.out.println("YESS");
+//////        deploymentConstants.setLoginCodeIncrement(deploymentConstants.getLoginCodeIncrement() + 1);
+////        String codeFilePath = "is-authorized" + deploymentConstants.getLoginCodeIncrement() + ".txt";
+////        String scriptPath = resolveFilePath("is_authorized_script.py");
+////        ProcessBuilder processBuilder = new
+////                ProcessBuilder("python3", scriptPath, codeFilePath)
+////                .inheritIO();
+////
+////        Process workerProcess = processBuilder.start();
+////        workerProcess.waitFor();
+//        BufferedReader bufferedReader = new BufferedReader(new FileReader(
+//                resolveFilePath("login-session" + deploymentConstants.getLoginCodeIncrement() + ".txt")));
+//        String out = "";
+//        boolean toBreak = false;
+//        while (!toBreak) {
+//            out = bufferedReader.readLine();
+//            if (out != null) {
+//                toBreak = out.contains("user");
+//                System.out.println(out + toBreak);
+//            }
+//        }
+//        AuthDto authDto = new AuthDto("Successfully authenticated user with id ");
+//        return authDto;
+//    }

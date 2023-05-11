@@ -1,0 +1,42 @@
+version: "3"
+
+services:
+    backend:
+        build:
+          context: ./sgx-deployment-framework-backend
+          dockerfile: ./Dockerfile
+        # image: sgx-deployment-framework-backend-sgx-service-provider:latest
+        image: acrtestbodo.azurecr.io/sgx-deployment-framework-backend-sgx-service-provider:latest
+        container_name: sgx-deployment-framework-backend-sgx-service-provider
+        restart: on-failure
+        env_file: ./.env
+        ports:
+            - $SPRING_LOCAL_PORT:$SPRING_DOCKER_PORT
+            - $SGX_SERVCE_PROVIDER_LOCAL_PORT:$SGX_SERVCE_PROVIDER_DOCKER_PORT
+        networks:
+            - SGX_FRAMEWORK
+    frontend:
+        build:
+          context: ./sgx-deployment-framework-frontend
+          dockerfile: ./Dockerfile
+        # image: sgx-deployment-framework-frontend:latest
+        image: acrtestbodo.azurecr.io/sgx-deployment-framework-frontend:latest
+        container_name: sgx-deployment-framework-frontend
+        depends_on: 
+            - backend
+        restart: on-failure
+        ports:
+            - $FRONTEND_LOCAL_PORT:$FRONTEND_DOCKER_PORT
+        networks:
+            - SGX_FRAMEWORK
+networks:
+    SGX_FRAMEWORK:
+        driver: bridge
+
+# volumes:
+#   database-volume:
+#     driver: local
+#     driver_opts:
+#       type: cifs
+#       o: "mfsymlinks,vers=3.0,username=dscanadastorage,password=fSev39FIzR6gMAi6ch81RVEgjLySJ80o/5ZaH6bK2RSxNQ/K+RZaCSNBA1SLBMk6XYW4m08ZtCct+AStoEcZoA==,addr=dscanadastorage.file.core.windows.net"
+#       device: "//dscanadastorage.file.core.windows.net/database-volume"
