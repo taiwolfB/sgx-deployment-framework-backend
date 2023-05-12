@@ -114,6 +114,7 @@ public class DeploymentService {
         script.add("cd ../");
         script.add("sudo git clone https://github.com/taiwolfB/sgx-deployment-framework-remote-attestation");
         script.add("cd sgx-deployment-framework-remote-attestation");
+        script.add("sudo git checkout secret-encryption-new-try");
         script.add("sudo chmod 777 install_dcap_pccs.exp");
         script.add("sudo expect install_dcap_pccs.exp");
         script.add("sudo ./bootstrap");

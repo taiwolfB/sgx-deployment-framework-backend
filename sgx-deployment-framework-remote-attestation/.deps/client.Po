@@ -199,8 +199,8 @@ client.o: client.cpp /usr/include/stdc-predef.h config.h Enclave_u.h \
  /usr/include/c++/9/bits/functional_hash.h \
  /usr/include/c++/9/bits/basic_string.tcc common.h protocol.h \
  /usr/include/inttypes.h /opt/intel/sgxsdk/include/sgx_quote.h \
- sample_libcrypto/sample_libcrypto.h sgx_detect.h hexutil.h fileio.h \
- base64.h crypto.h /opt/intel/sgxsdk/include/sgx_key_exchange.h \
+ sgx_detect.h hexutil.h fileio.h base64.h crypto.h \
+ /opt/intel/sgxsdk/include/sgx_key_exchange.h \
  /opt/openssl/1.1.1i/include/openssl/pem.h \
  /opt/openssl/1.1.1i/include/openssl/x509.h \
  /opt/openssl/1.1.1i/include/openssl/buffer.h \
@@ -711,8 +711,6 @@ protocol.h:
 /usr/include/inttypes.h:
 
 /opt/intel/sgxsdk/include/sgx_quote.h:
-
-sample_libcrypto/sample_libcrypto.h:
 
 sgx_detect.h:
 
