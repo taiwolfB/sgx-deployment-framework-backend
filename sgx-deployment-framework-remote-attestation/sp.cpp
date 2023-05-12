@@ -52,7 +52,7 @@ in the License.
 #include "logfile.h"
 #include "settings.h"
 #include "enclave_verify.h"
-#include "sample_libcrypto/sample_libcrypto.h"
+// #include "sample_libcrypto/sample_libcrypto.h"
 
 using namespace json;
 using namespace std;
@@ -703,27 +703,27 @@ disconnect:
 	return 0;
 }
 
-/*==========================================================================
-* AES-ENCRYPT
-*========================================================================== */
+// /*==========================================================================
+// * AES-ENCRYPT
+// *========================================================================== */
 
-int aes_encrypt_gcm(unsigned char* key, unsigned char* message, size_t mlen,
-    unsigned char* encrypted_message, sample_aes_gcm_128bit_tag_t* mac)
-{
-    unsigned char iv[12] = { 0 };
-    sample_status_t status = sample_rijndael128GCM_encrypt(
-        (sample_aes_gcm_128bit_key_t*)key,
-        message,
-        mlen,
-        encrypted_message,
-        &iv[0],
-        12,
-        NULL,
-        0,
-        mac
-    );
-	return status == SAMPLE_SUCCESS;
-}
+// int aes_encrypt_gcm(unsigned char* key, unsigned char* message, size_t mlen,
+//     unsigned char* encrypted_message, sample_aes_gcm_128bit_tag_t* mac)
+// {
+//     unsigned char iv[12] = { 0 };
+//     sample_status_t status = sample_rijndael128GCM_encrypt(
+//         (sample_aes_gcm_128bit_key_t*)key,
+//         message,
+//         mlen,
+//         encrypted_message,
+//         &iv[0],
+//         12,
+//         NULL,
+//         0,
+//         mac
+//     );
+// 	return status == SAMPLE_SUCCESS;
+// }
 
 
 int process_msg5(MsgIO *msg, ra_session_t *session)
@@ -752,6 +752,7 @@ int process_msg5(MsgIO *msg, ra_session_t *session)
 		return 0;
 		}
 
+		// SHOULD CHECK SOMEHOW THAT THE DEPLOYMENT FILE LOCATION IS NOT NULL, maybe in client
 		FILE* fp;
 		if ( (fp = fopen(msg5->deploymentFileLocation, "r")) == NULL ) {
 			fprintf(stderr, "fopen: ");

@@ -421,18 +421,18 @@ client_SOURCES = client.cpp sgx_detect_linux.c sgx_stub.c quote_size.c \
 nodist_client_SOURCES = Enclave_u.c Enclave_u.h
 EXTRA_client_DEPENDENCIES = Enclave.signed.so
 BUILT_SOURCES = Enclave_u.c Enclave_u.h policy
-client_LDFLAGS = $(AM_LDFLAGS) -L/opt/openssl/1.1.1i/lib -Lsample_libcrypto  -Isample_libcrypto
+client_LDFLAGS = $(AM_LDFLAGS) -L/opt/openssl/1.1.1i/lib
 sp_SOURCES = sp.cpp agent_wget.cpp iasrequest.cpp enclave_verify.c \
 	$(common) $(am__append_1)
 EXTRA_sp_DEPENDENCIES = Enclave.signed.so
 mrsigner_SOURCES = mrsigner.cpp crypto.c hexutil.c
-sp_LDFLAGS = $(AM_LDFLAGS) -L/opt/openssl/1.1.1i/lib -Lsample_libcrypto  -Isample_libcrypto 
+sp_LDFLAGS = $(AM_LDFLAGS) -L/opt/openssl/1.1.1i/lib 
 mrsigner_LDFLAGS = $(AM_LDFLAGS) -L/opt/openssl/1.1.1i/lib
 client_LDADD = -l$(SGX_URTS_LIB) -lsgx_ukey_exchange -lcrypto \
-	-l:libsgx_capable.a -lpthread -ldl -lsample_libcrypto -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR)
+	-l:libsgx_capable.a -lpthread -ldl
 
-mrsigner_LDADD = -lcrypto -lsample_libcrypto -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR)
-sp_LDADD = -lcrypto -lsample_libcrypto -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR)
+mrsigner_LDADD = -lcrypto
+sp_LDADD = -lcrypto 
 all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
