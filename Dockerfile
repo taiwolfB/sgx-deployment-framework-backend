@@ -35,6 +35,8 @@ RUN make install
 RUN sed -i -e 's/\r$//' "./run-server"
 RUN sed -i -e 's/\r$//' "./settings"
 RUN sed -i -e 's/\r$//' "./policy"
+RUN chmod 777 ./sp
+RUN chmod 777 ./run-server
 EXPOSE 8085
 
 CMD ["/usr/bin/supervisord"]
