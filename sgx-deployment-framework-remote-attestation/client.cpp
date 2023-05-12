@@ -817,14 +817,23 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config, char* deploymentFile
 		}
 
 		printf("Encrpted data size received = %d\n", msg6_encrypted->encryptedDataSize);
-		printf("Received message = %s \n", msg6_encrypted->data);
-
+		// printf("Received message = %s \n", msg6_encrypted->data);
+		// char* tmpDecryptedData = (char*)malloc(100000 * sizeof(char));
+		// size_t decryptedSize = 100000;
+		// tmpDecryptedData = base64_decode((char*)msg6_encrypted->data, &decryptedSize);
+		// strcat(deploymentFileLocation, "test");
 		FILE* fp;
-		fp = fopen(deploymentFileLocation,"w+");
-		fprintf(fp, "%s", msg6_encrypted->data);
+		fp = fopen(deploymentFileLocation,"wb");
+		// int i = 0 ;
+		// while (i < msg6_encrypted->encryptedDataSize) {
+		// 	fprintf(fp, "%c", (char)msg6_encrypted->dataInts[i]);
+		// 	//vezi ce inturi se citesc cu un vector de aparitie si dupa ce se primeste in service provider
+		// 	i++;
+		// }f
+		fwrite(msg6_encrypted->data, 1, msg6_encrypted->encryptedDataSize, fp);
 		fclose(fp);
 	
-		printf("%d", chmod(deploymentFileLocation, S_IRWXU | S_IRWXO | S_IRWXG));
+		printf("Chmod result = %d", chmod(deploymentFileLocation, S_IRWXU | S_IRWXO | S_IRWXG));
 
 		// unsigned char* tmpData = (unsigned char*)malloc(msg6_encrypted->encryptedDataSize * sizeof(unsigned char));
 		// char
