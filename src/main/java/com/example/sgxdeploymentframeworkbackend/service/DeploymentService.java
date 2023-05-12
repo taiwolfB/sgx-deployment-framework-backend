@@ -334,7 +334,7 @@ public class DeploymentService {
 
             RunCommandInput startSGXClientCommand = new RunCommandInput()
                     .withCommandId("RunShellScript")
-                    .withScript(createSgxClientScript(backendIpAddress, deploymentProperties.getVmName()));
+                    .withScript(createSgxClientScript(deploymentProperties.getVmName(), backendIpAddress));
             RunCommandResult startSGXClientCommandResult = azureResourceManager
                     .virtualMachines()
                     .runCommand(resourceGroup.name(), virtualMachine.name(), startSGXClientCommand);
