@@ -603,7 +603,8 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config, char* deploymentFile
 	 * amount of time generating keys that won't be used.
 	 */
 
-	dividerWithText(fplog, "Msg0||Msg1 ==> SP");
+	dividerWithText(fplog, "Msg0||Msg1 ==> SP"); 
+
 	fsend_msg_partial(fplog, &msg0_extended_epid_group_id,
 		sizeof(msg0_extended_epid_group_id));
 	fsend_msg(fplog, &msg1, sizeof(msg1));
@@ -833,7 +834,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config, char* deploymentFile
 		fwrite(msg6_encrypted->data, 1, msg6_encrypted->encryptedDataSize, fp);
 		fclose(fp);
 	
-		printf("Chmod result = %d", chmod(deploymentFileLocation, S_IRWXU | S_IRWXO | S_IRWXG));
+		// printf("Chmod result = %d", chmod(deploymentFileLocation, S_IRWXU | S_IRWXO | S_IRWXG));
 
 		// unsigned char* tmpData = (unsigned char*)malloc(msg6_encrypted->encryptedDataSize * sizeof(unsigned char));
 		// char
