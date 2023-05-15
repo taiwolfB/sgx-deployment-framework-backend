@@ -77,6 +77,11 @@ public class AzureController {
         return fileUploadResponseDto;
     }
 
+    @GetMapping("/deployed-applications")
+    public List<DeployedApplicationDto> getDeployedApplications() {
+        return deploymentService.findDeployedApplications();
+    }
+
     @GetMapping("/unauthorize")
     public String unauthorizeAccount() throws IOException, InterruptedException {
         return "YES";

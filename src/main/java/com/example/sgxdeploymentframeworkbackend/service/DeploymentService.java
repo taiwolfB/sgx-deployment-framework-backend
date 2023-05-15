@@ -24,10 +24,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.*;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -120,13 +117,6 @@ public class DeploymentService {
         script.add("sudo ./bootstrap");
         script.add("sudo ./configure --with-openssldir=/opt/openssl/1.1.1i");
         script.add("sudo make");
-        //script.add("sudo ./run-server 8085");
-//        script.add("sudo git clone https://github.com/taiwolfB/IntelSGX_LINUX_SAMPLES.git");
-//        script.add("cd IntelSGX_LINUX_SAMPLES");
-//        script.add("sudo chmod 777 install_dcap_pccs.exp");
-//        script.add("sudo expect install_dcap_pccs.exp");
-//        script.add("cd ../");
-//        script.add("sudo git clone https://github.com/taiwolfB/INTEL_SGX_RA_SAMPLE_UPDATED_.git");
         return script;
     }
 
@@ -263,13 +253,20 @@ public class DeploymentService {
             webSocketDeploymentLogDto.setMessage("Provisioned ssh keys");
             webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
 
-            FileWriter fileWriter = new FileWriter(deploymentProperties.getPrivateKeyName()
-                    + deploymentProperties.getNextResourceNumber()
+            FileWriter fileWriter = new FileWriter(resourceGroup.name()
+                    + "_"
+                    + deploymentProperties.getVmName()
+                    + "_"
+                    + ipAddress.ipAddress()
                     + ".pem");
             fileWriter.write(sshPublicKeyGenerateKeyPairResultInner.privateKey());
             fileWriter.close();
 
-            System.out.println(sshPublicKeyGenerateKeyPairResultInner.privateKey());
+            log.info("SSH key = " + sshPublicKeyGenerateKeyPairResultInner.privateKey());
+            webSocketDeploymentLogDto.setMessage("SSH KEY");
+            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+            webSocketDeploymentLogDto.setMessage(sshPublicKeyGenerateKeyPairResultInner.privateKey());
+            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
 
             log.info("Provisioning virtual machine, this might take a few minutes.");
             webSocketDeploymentLogDto.setMessage("Provisioning virtual machine, this might take a few minutes.");
@@ -389,9 +386,46 @@ public class DeploymentService {
         return authResponseDto;
     }
 
+    public List<DeployedApplicationDto> findDeployedApplications() {
+        List<DeployedApplicationDto> deployedApplications = new ArrayList<>();
+        try {
+            azureResourceManager.virtualMachines().list().forEach(virtualMachine -> {
+                if (virtualMachine.resourceGroupName().contains(deploymentProperties.getResourceGroupName().toUpperCase())) {
+                    DeployedApplicationDto deployedApplicationDto = new DeployedApplicationDto();
+                    deployedApplicationDto.setApplicationName(virtualMachine.name());
+                    deployedApplicationDto.setVirtualMachineIp(virtualMachine.getPrimaryPublicIPAddress().ipAddress());
+                    deployedApplicationDto.setSshUsername(deploymentProperties.getUsername());
+                    String sshKey = "";
+                    File pemFile = new File(virtualMachine.resourceGroupName()
+                            + "_"
+                            + virtualMachine.name()
+                            + "_"
+                            + virtualMachine.getPrimaryPublicIPAddress().ipAddress()
+                            + ".pem");
+                    Scanner fileReader = null;
+                    try {
+                        fileReader = new Scanner(pemFile);
+                    } catch (FileNotFoundException e) {
+                        sshKey = "PEM FILE MIGHT HAVE BEEN DELETED FROM THE SYSTEM. PLEASE CONTACT AN ADMINISTRATOR.";
+                        log.error("PEM FILE MIGHT HAVE BEEN DELETED FROM THE SYSTEM. PLEASE CONTACT AN ADMINISTRATOR");
+                    }
+                    while (fileReader.hasNextLine()) {
+                        sshKey =  sshKey.concat(fileReader.nextLine() + "\n");
+                    }
+                    fileReader.close();
+                    deployedApplicationDto.setSshKey(sshKey);
+                    deployedApplications.add(deployedApplicationDto);
+                }
+            });
+            return deployedApplications;
+        } catch (Exception ex) {
+            log.error(ex.getMessage());
+            ex.printStackTrace();
+            return deployedApplications;
+        }
+    }
     private List<String> createSgxClientScript(String deploymentFileLocation, String backendIpLocation) {
         List<String> script = new ArrayList<>();
-//        script.add("cd $HOME/sgx-deployment-framework-remote-attestation");
         script.add("pwd");
         script.add("cd /home/azureuser/sgx-deployment-framework-remote-attestation");
         script.add("pwd");

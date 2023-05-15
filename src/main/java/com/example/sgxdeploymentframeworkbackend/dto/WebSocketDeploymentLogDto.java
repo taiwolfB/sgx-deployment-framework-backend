@@ -6,4 +6,5 @@ import lombok.Data;
 public class WebSocketDeploymentLogDto {
 
     private String message;
+    private String deploymentName;
 }
