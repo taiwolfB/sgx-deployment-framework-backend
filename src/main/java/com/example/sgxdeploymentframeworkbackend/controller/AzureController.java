@@ -62,8 +62,8 @@ public class AzureController {
         FileUploadResponseDto fileUploadResponseDto = new FileUploadResponseDto();
         try {
             System.out.println(fileUploadDto.getEncodedByteArray());
-            byte[] fileBytes = Base64.getDecoder().decode(fileUploadDto.getEncodedByteArray().getBytes());
-            OutputStream os = new FileOutputStream(fileUploadDto.getApplicationName());
+            final byte[] fileBytes = Base64.getDecoder().decode(fileUploadDto.getEncodedByteArray().getBytes());
+            final OutputStream os = new FileOutputStream(fileUploadDto.getApplicationName());
             os.write(fileBytes);
             os.close();
             fileUploadResponseDto.setMessage("Application executable successfully uploaded.");

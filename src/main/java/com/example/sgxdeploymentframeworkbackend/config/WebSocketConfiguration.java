@@ -30,12 +30,12 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     @SneakyThrows
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        ProcessBuilder processBuilder = new
+        final ProcessBuilder processBuilder = new
                 ProcessBuilder("curl", "ipinfo.io/ip");
-        Process workerProcess = processBuilder.start();
+        final Process workerProcess = processBuilder.start();
         workerProcess.waitFor();
 
-        BufferedReader bufferedReader = new BufferedReader(
+        final BufferedReader bufferedReader = new BufferedReader(
                 new InputStreamReader(
                         workerProcess.getInputStream()
                 ));
@@ -43,7 +43,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
         while ((ipAddress = bufferedReader.readLine()) != null) {
             break;
         }
-        String frontend_address = "http://" + ipAddress + ":8083";
+        final String frontend_address = "http://" + ipAddress + ":8083";
         bufferedReader.close();
         registry.addEndpoint("device-code-provider")
                 .setAllowedOrigins(environment.getProperty("frontend.server"), frontend_address, "http://localhost:8083")

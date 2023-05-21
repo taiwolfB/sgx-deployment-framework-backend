@@ -22,7 +22,7 @@ EXPOSE 8082
 RUN apt-get update
 RUN mkdir -p /var/log/supervisor
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY ../sgx-deployment-framework-remote-attestation ./
+COPY ./sgx-deployment-framework-remote-attestation ./
 SHELL ["/bin/bash", "-c"]
 RUN yes | apt-get install autotools-dev automake libssl-dev wget net-tools supervisor curl
 RUN yes yes | apt-get install build-essential git -y -q
