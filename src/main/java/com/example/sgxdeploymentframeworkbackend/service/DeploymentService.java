@@ -415,7 +415,7 @@ public class DeploymentService {
     }
     private List<String> createSgxClientScript(String deploymentFileLocation, String backendIpLocation) {
         List<String> script = new ArrayList<>();
-        script.add("cd /home/azureuser/sgx-deployment-frameowrk-remote-attestation");
+        script.add("cd /home/azureuser/sgx-deployment-framework-remote-attestation");
         script.add("sudo chmod 777 ./run-client");
         script.add("sudo chmod 777 ./run-server");
         script.add("sudo chmod 777 ./client");
