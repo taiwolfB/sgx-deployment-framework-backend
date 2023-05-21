@@ -416,7 +416,12 @@ public class DeploymentService {
     }
     private List<String> createSgxClientScript(String deploymentFileLocation, String backendIpLocation) {
         List<String> script = new ArrayList<>();
+        script.add("sudo su -");
+        script.add("echo \"/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto\" > /etc/ld.so.conf.d/local.conf");
+        script.add("ldconfig");
+        script.add("exit");
         script.add("cd /home/azureuser/sgx-deployment-framework-remote-attestation");
+        script.add("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto");
         script.add("sudo chmod 777 ./run-client");
         script.add("sudo chmod 777 ./run-server");
         script.add("sudo chmod 777 ./client");
