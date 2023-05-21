@@ -423,7 +423,7 @@ public class DeploymentService {
         script.add("echo \"after setting sample\"");
         script.add("ldconfig");
         script.add("echo \"after ldconfig\"");
-        script.add("exit");
+//        script.add("exit");
         script.add("echo \"after exit\"");
         script.add("cd /home/azureuser/sgx-deployment-framework-remote-attestation");
         script.add("echo \"after cd\"");
