@@ -111,7 +111,7 @@ public class DeploymentService {
         script.add("cd ../");
         script.add("sudo git clone https://github.com/taiwolfB/sgx-deployment-framework-remote-attestation");
         script.add("cd sgx-deployment-framework-remote-attestation");
-        script.add("sudo git checkout secret-encryption-new-try");
+//        script.add("sudo git checkout full-workflow-working");
         script.add("sudo chmod 777 install_dcap_pccs.exp");
         script.add("sudo expect install_dcap_pccs.exp");
         script.add("sudo ./bootstrap");
@@ -354,12 +354,6 @@ public class DeploymentService {
         return responseDeploymentDto;
     }
 
-    private String resolveFilePath(String path){
-        File file = new File(path);
-        System.out.println(file.getAbsolutePath());
-        return file.getAbsolutePath();
-    }
-
     public AuthResponseDto checkAuthorization(AuthDto authDto) {
         AuthResponseDto authResponseDto =  new AuthResponseDto();
         try {
@@ -426,9 +420,7 @@ public class DeploymentService {
     }
     private List<String> createSgxClientScript(String deploymentFileLocation, String backendIpLocation) {
         List<String> script = new ArrayList<>();
-        script.add("pwd");
-        script.add("cd /home/azureuser/sgx-deployment-framework-remote-attestation");
-        script.add("pwd");
+        script.add("cd /home/azureuser/sgx-deployment-frameowrk-remote-attestation");
         script.add("sudo ./run-client -a " + deploymentFileLocation  + " " + backendIpLocation + ":8085");
         script.add("./" + deploymentFileLocation);
         return script;
