@@ -109,9 +109,10 @@ public class DeploymentService {
         script.add("cd sgx-deployment-framework-remote-attestation");
         script.add("sudo chmod 777 install_dcap_pccs.exp");
         script.add("sudo expect install_dcap_pccs.exp");
-        script.add("sudo ./bootstrap");
-        script.add("sudo ./configure --with-openssldir=/opt/openssl/1.1.1i");
-        script.add("sudo make");
+//        script.add("sudo ./bootstrap");
+//        script.add("sudo ./configure --with-openssldir=/opt/openssl/1.1.1i");
+//        script.add("sudo make");
+        script.add("sudo ./bootstrap && sudo ./configure --with-openssldir=/opt/openssl/1.1.1i LIBS=\"-lsample_libcrypto\" LDFLAGS=\"-L/opt/intel/sgxsdk/lib64 -L/home/azureuser/sgx-deployment-framework-remote-attestation/sample_libcrypto\" CPPFLAGS=\"-I/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto -I/opt/intel/sgxsdk/include\"  &&  sudo make");
         return script;
     }
 
@@ -421,8 +422,8 @@ public class DeploymentService {
         script.add("sudo chmod 777 ./client");
         script.add("sudo chmod 777 ./sp");
         script.add("sudo chmod 777 ./mrsigner");
-        script.add("sudo chmod 777 ./" + deploymentFileLocation);
         script.add("sudo ./run-client -a " + deploymentFileLocation  + " " + backendIpLocation + ":8085");
+        script.add("sudo chmod 777 ./" + deploymentFileLocation);
         script.add("./" + deploymentFileLocation);
         return script;
     }
