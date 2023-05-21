@@ -37,6 +37,7 @@ RUN sed -i -e 's/\r$//' "./settings"
 RUN sed -i -e 's/\r$//' "./policy"
 RUN chmod 777 ./sp
 RUN chmod 777 ./run-server
+RUN chmod 777 ./run-client
 EXPOSE 8085
 
 CMD ["/usr/bin/supervisord"]

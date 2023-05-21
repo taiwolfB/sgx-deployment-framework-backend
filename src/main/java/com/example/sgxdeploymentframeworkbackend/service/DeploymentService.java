@@ -7,7 +7,6 @@ import com.azure.identity.DeviceCodeCredentialBuilder;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.compute.fluent.models.SshPublicKeyGenerateKeyPairResultInner;
 import com.azure.resourcemanager.compute.fluent.models.SshPublicKeyResourceInner;
-import com.azure.resourcemanager.compute.implementation.VirtualMachinesImpl;
 import com.azure.resourcemanager.compute.models.*;
 import com.azure.resourcemanager.network.models.*;
 import com.azure.resourcemanager.network.models.IpVersion;
@@ -15,15 +14,12 @@ import com.azure.resourcemanager.resources.models.ResourceGroup;
 import com.example.sgxdeploymentframeworkbackend.config.WebSocketListener;
 import com.example.sgxdeploymentframeworkbackend.constants.DeploymentProperties;
 import com.example.sgxdeploymentframeworkbackend.dto.*;
-import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.util.*;
 
 @Service
@@ -111,7 +107,6 @@ public class DeploymentService {
         script.add("cd ../");
         script.add("sudo git clone https://github.com/taiwolfB/sgx-deployment-framework-remote-attestation");
         script.add("cd sgx-deployment-framework-remote-attestation");
-//        script.add("sudo git checkout full-workflow-working");
         script.add("sudo chmod 777 install_dcap_pccs.exp");
         script.add("sudo expect install_dcap_pccs.exp");
         script.add("sudo ./bootstrap");

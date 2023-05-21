@@ -25,12 +25,12 @@ public class WebConfig implements WebMvcConfigurer {
     @SneakyThrows
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        final ProcessBuilder processBuilder = new
+        ProcessBuilder processBuilder = new
                 ProcessBuilder("curl", "ipinfo.io/ip");
-        final Process workerProcess = processBuilder.start();
+        Process workerProcess = processBuilder.start();
         workerProcess.waitFor();
 
-        final BufferedReader bufferedReader = new BufferedReader(
+        BufferedReader bufferedReader = new BufferedReader(
                 new InputStreamReader(
                         workerProcess.getInputStream()
                 ));
@@ -39,7 +39,7 @@ public class WebConfig implements WebMvcConfigurer {
             break;
         }
 
-        final String frontend_address = "http://" + ipAddress + ":8083";
+        String frontend_address = "http://" + ipAddress + ":8083";
         bufferedReader.close();
         registry.addMapping("/**")
                 .allowedOrigins(environment.getProperty("frontend.server"), frontend_address, "http://localhost:8083")
