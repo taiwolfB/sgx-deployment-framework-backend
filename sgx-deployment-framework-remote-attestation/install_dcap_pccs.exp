@@ -1,0 +1,73 @@
+#!/usr/bin/expect
+
+set timeout -1
+
+spawn sudo apt-get install sgx-dcap-pccs
+
+expect "Do you want to install PCCS now? (Y/N)"
+send -- "Y\r"
+
+expect "Enter your http proxy server address, e.g. http://proxy-server:port"
+send -- "\r"
+
+expect "Enter your https proxy server address, e.g. http://proxy-server:port"
+send -- "\r"
+
+expect "Do you want to configure PCCS now?"
+send -- "Y\r"
+
+expect "Set HTTPS listening port"
+send -- "8081\n"
+
+expect "Set the PCCS service to accept local connections only?"
+send -- "Y\r"
+
+expect "Set your Intel PCS API key"
+send -- "efd48c955f3d4e8fafc667c54acb8753\n"
+
+expect "Choose caching fill method"
+send -- "LAZY\n"
+
+expect "Set PCCS server administrator password"
+send -- "testB@01\n"
+
+expect "Re-enter administrator password"
+send -- "testB@01\n"
+
+expect "Set PCCS server user password"
+send -- "testB@01\n"
+
+expect "Re-enter user password"
+send -- "testB@01\n"
+
+expect "Do you want to generate insecure HTTPS key and cert for PCCS service?"
+send -- "Y\r"
+
+expect "Country Name"
+send -- "RO\n"
+
+expect "State or Province Name"
+send -- "Romania\n"
+
+expect "Locality Name"
+send -- "Cluj-Napoca\n"
+
+expect "Organization Name"
+send -- "UTCN\n"
+
+expect "Organizational Unit Name"
+send -- "UTCN\n"
+
+expect "Common Name"
+send -- "Bogdan Tailup\n"
+
+expect "Email Address"
+send -- "tailupbogdan@gmail.com\n"
+
+expect "A challenge password"
+send -- "testB@01\n"
+
+expect "An optional company name"
+send -- "UTCN\n"
+
+expect "Installation completed successfully."
