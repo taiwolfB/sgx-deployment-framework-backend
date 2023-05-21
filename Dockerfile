@@ -39,7 +39,7 @@ RUN chmod 777 ./sp
 RUN chmod 777 ./run-server
 RUN chmod 777 ./run-client
 RUN echo "/sample_libcrypto" > /etc/ld.so.conf.d/local.conf
-RUN ldconfig
+RUN ldconfigx
 RUN export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sample_libcrypto
 EXPOSE 8085
 

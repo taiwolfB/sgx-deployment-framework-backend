@@ -416,20 +416,35 @@ public class DeploymentService {
     }
     private List<String> createSgxClientScript(String deploymentFileLocation, String backendIpLocation) {
         List<String> script = new ArrayList<>();
+        script.add("echo \"starting script\"");
         script.add("sudo su -");
+        script.add("echo \"before setting sample crypto\"");
         script.add("echo \"/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto\" > /etc/ld.so.conf.d/local.conf");
+        script.add("echo \"after setting sample\"");
         script.add("ldconfig");
+        script.add("echo \"after ldconfig\"");
         script.add("exit");
+        script.add("echo \"after exit\"");
         script.add("cd /home/azureuser/sgx-deployment-framework-remote-attestation");
+        script.add("echo \"after cd\"");
         script.add("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto");
+        script.add("echo \"after export\"");
         script.add("sudo chmod 777 ./run-client");
+        script.add("echo \"after run-client chmod\"");
         script.add("sudo chmod 777 ./run-server");
+        script.add("echo \"after run-server chmod\"");
         script.add("sudo chmod 777 ./client");
+        script.add("echo \"after client chmod\"");
         script.add("sudo chmod 777 ./sp");
+        script.add("echo \"after sp chmod\"");
         script.add("sudo chmod 777 ./mrsigner");
+        script.add("echo \"after mrsigned chmod\"");
         script.add("sudo ./run-client -a " + deploymentFileLocation  + " " + backendIpLocation + ":8085");
+        script.add("echo \"after run client exec\"");
         script.add("sudo chmod 777 ./" + deploymentFileLocation);
+        script.add("echo \"after file chmod\"");
         script.add("./" + deploymentFileLocation);
+        script.add("echo \"after execute file\"");
         return script;
     }
 }
