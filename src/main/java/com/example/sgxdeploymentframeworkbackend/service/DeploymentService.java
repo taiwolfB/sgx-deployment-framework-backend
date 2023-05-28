@@ -32,7 +32,6 @@ public class DeploymentService {
     @Autowired
     private DeploymentProperties deploymentProperties;
 
-
     private AzureResourceManager azureResourceManager;
 
     public AuthResponseDto authorize(AuthDto authDto) {
@@ -68,24 +67,26 @@ public class DeploymentService {
         return authResponseDto;
     }
 
-    private List<String> createScript() {
+    private List<String> createStartupScript() {
         List<String> script = new ArrayList<>();
         script.add("echo set debconf to Noninteractive");
         script.add("echo \"debconf debconf/frontend select Noninteractive\" | sudo debconf-set-selections");
-        script.add("yes yes | sudo apt-get install build-essential git gcc -y -q");
-        script.add("yes yes | sudo apt-get install build-essential");
-        script.add("yes | sudo apt -y install g++");
+        script.add("sudo apt-get update");
+        script.add("sudo apt-get update");
+        script.add("sudo apt-get install build-essential git gcc -y -q");
         script.add("cd /opt");
         script.add("mkdir intel");
         script.add("cd intel");
         script.add("echo \"deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu focal main\" | sudo tee /etc/apt/sources.list.d/intel-sgx.list");
         script.add("sudo wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add");
         script.add("sudo apt-get update");
+        script.add("sudo apt-get install build-essential git gcc -y -q");
         script.add("yes | sudo apt-get install libsgx-epid libsgx-quote-ex libsgx-dcap-ql libsgx-uae-service");
         script.add("yes | sudo apt-get install libsgx-urts-dbgsym libsgx-enclave-common-dbgsym libsgx-dcap-ql-dbgsym libsgx-dcap-default-qpl-dbgsym");
         script.add("yes | sudo apt-get install libsgx-dcap-default-qpl libsgx-launch libsgx-urts");
         script.add("sudo wget - https://download.01.org/intel-sgx/latest/linux-latest/distro/ubuntu20.04-server/sgx_linux_x64_sdk_2.19.100.3.bin");
         script.add("sudo chmod +x sgx_linux_x64_sdk_2.19.100.3.bin");
+        script.add("sudo apt-get install build-essential git gcc -y -q");
         script.add("yes yes | sudo ./sgx_linux_x64_sdk_2.19.100.3.bin");
         script.add(". /opt/intel/sgxsdk/environment");
         script.add("yes | sudo apt-get install libsgx-enclave-common-dev libsgx-dcap-ql-dev libsgx-dcap-default-qpl-dev");
@@ -109,10 +110,9 @@ public class DeploymentService {
         script.add("cd sgx-deployment-framework-remote-attestation");
         script.add("sudo chmod 777 install_dcap_pccs.exp");
         script.add("sudo expect install_dcap_pccs.exp");
-//        script.add("sudo ./bootstrap");
-//        script.add("sudo ./configure --with-openssldir=/opt/openssl/1.1.1i");
-//        script.add("sudo make");
-        script.add("sudo ./bootstrap && sudo ./configure --with-openssldir=/opt/openssl/1.1.1i LIBS=\"-lsample_libcrypto\" LDFLAGS=\"-L/opt/intel/sgxsdk/lib64 -L/home/azureuser/sgx-deployment-framework-remote-attestation/sample_libcrypto\" CPPFLAGS=\"-I/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto -I/opt/intel/sgxsdk/include\"  &&  sudo make");
+        script.add("sudo ./bootstrap");
+        script.add("sudo ./configure --with-openssldir=/opt/openssl/1.1.1i LIBS=\"-lsample_libcrypto\" LDFLAGS=\"-L/opt/intel/sgxsdk/lib64 -L/home/azureuser/sgx-deployment-framework-remote-attestation/sample_libcrypto\" CPPFLAGS=\"-I/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto -I/opt/intel/sgxsdk/include\"");
+        script.add("sudo make");
         return script;
     }
 
@@ -133,211 +133,27 @@ public class DeploymentService {
     public DeploymentDto deploy(DeploymentDto deploymentDto) throws IOException {
         DeploymentDto responseDeploymentDto = new DeploymentDto();
         try {
+            WebSocketDeploymentLogDto webSocketDeploymentLogDto = new WebSocketDeploymentLogDto();
+
             updateDeploymentProperties();
             deploymentProperties.setVmName(deploymentDto.getApplicationName());
-            WebSocketDeploymentLogDto webSocketDeploymentLogDto = new WebSocketDeploymentLogDto();
-            ResourceGroup resourceGroup = azureResourceManager.resourceGroups()
-                    .define(deploymentProperties.getResourceGroupName() + deploymentProperties.getNextResourceNumber())
-                    .withRegion(deploymentProperties.getLocation())
-                    .create();
-            log.info("Provisioned Resource Group " + resourceGroup.name());
-            webSocketDeploymentLogDto.setMessage("Provisioned Resource Group " + resourceGroup.name());
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
 
+            final ResourceGroup resourceGroup = provisionResourceGroupAndLog(webSocketDeploymentLogDto);
+            final Network network = provisionNetworkAndLog(resourceGroup, webSocketDeploymentLogDto);
+            final PublicIpAddress publicIpAddress = provisionPublicIpAddressAndLog(
+                    resourceGroup, webSocketDeploymentLogDto);
+            final NetworkSecurityGroup networkSecurityGroup = provisionNetworkSecurityGroupAndLog(
+                    resourceGroup, webSocketDeploymentLogDto);
+            final NetworkInterface networkInterface = provisionNetworkInterfaceAndLog(
+                    resourceGroup, network, publicIpAddress, networkSecurityGroup, webSocketDeploymentLogDto);
 
-            Network network = azureResourceManager.networks()
-                    .define(deploymentProperties.getVnetName() + deploymentProperties.getNextResourceNumber())
-                    .withRegion(deploymentProperties.getLocation())
-                    .withExistingResourceGroup(resourceGroup)
-                    .withAddressSpace(deploymentProperties.getVnetAddressSpace())
-                    .withSubnet(deploymentProperties.getSubnetName() + deploymentProperties.getNextResourceNumber(),
-                            deploymentProperties.getSubnetAddressSpace())
-                    .create();
-            log.info("Provisioned virtual network "
-                    + network.name()
-                    + " with address prefix "
-                    + network.addressSpaces()
-                    + " and Subnet Address space "
-                    + deploymentProperties.getSubnetAddressSpace());
-            webSocketDeploymentLogDto.setMessage("Provisioned virtual network "
-                    + network.name()
-                    + " with address prefix "
-                    + network.addressSpaces()
-                    + " and Subnet Address space "
-                    + deploymentProperties.getSubnetAddressSpace()
-            );
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+            final SshPublicKey sshPublicKey = provisionSshPublicKeyAndLog(
+                    resourceGroup, publicIpAddress, webSocketDeploymentLogDto);
+            final VirtualMachine virtualMachine = provisionVirtualMachineAndLog(
+                    resourceGroup, networkInterface, sshPublicKey, webSocketDeploymentLogDto);
 
-            PublicIpAddress ipAddress = azureResourceManager.publicIpAddresses()
-                    .define(deploymentProperties.getIpName() + deploymentProperties.getNextResourceNumber())
-                    .withRegion(deploymentProperties.getLocation())
-                    .withExistingResourceGroup(resourceGroup)
-                    .withStaticIP()
-                    .withSku(PublicIPSkuType.STANDARD)
-                    .withIpAddressVersion(IpVersion.IPV4)
-                    .create();
-            log.info("Provisioned ip address "
-                    + ipAddress.name()
-                    + " with address "
-                    + ipAddress.ipAddress());
-            webSocketDeploymentLogDto.setMessage("Provisioned ip address "
-                    + ipAddress.name()
-                    + " with address "
-                    + ipAddress.ipAddress());
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-
-            NetworkSecurityGroup networkSecurityGroup = azureResourceManager.networkSecurityGroups()
-                    .define(deploymentProperties.getNsgName() + deploymentProperties.getNextResourceNumber())
-                    .withRegion(deploymentProperties.getLocation())
-                    .withExistingResourceGroup(resourceGroup)
-                    .defineRule(deploymentProperties.getSecurityRuleInboundName())
-                    .allowInbound()
-                    .fromAnyAddress()
-                    .fromAnyPort()
-                    .toAnyAddress()
-                    .toAnyPort()
-                    .withProtocol(SecurityRuleProtocol.TCP)
-                    .withPriority(deploymentProperties.getSecurityRulePriority())
-                    .withDescription(deploymentProperties.getSecurityRuleInboundDescription())
-                    .attach()
-                    .defineRule(deploymentProperties.getSecurityRuleOutboundName())
-                    .allowOutbound()
-                    .fromAnyAddress()
-                    .fromAnyPort()
-                    .toAnyAddress()
-                    .toAnyPort()
-                    .withProtocol(SecurityRuleProtocol.TCP)
-                    .withPriority(deploymentProperties.getSecurityRulePriority())
-                    .withDescription(deploymentProperties.getSecurityRuleOutboundDescription())
-                    .attach()
-                    .create();
-            log.info("Provisioned Network Security group " + networkSecurityGroup.name());
-            webSocketDeploymentLogDto.setMessage("Provisioned Network Security group " + networkSecurityGroup.name());
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-
-            NetworkInterface networkInterface= azureResourceManager.networkInterfaces()
-                    .define(deploymentProperties.getNicName() + deploymentProperties.getNextResourceNumber())
-                    .withRegion(deploymentProperties.getLocation())
-                    .withExistingResourceGroup(resourceGroup)
-                    .withExistingPrimaryNetwork(network)
-                    .withSubnet(deploymentProperties.getSubnetName() + deploymentProperties.getNextResourceNumber())
-                    .withPrimaryPrivateIPAddressDynamic()
-                    .withExistingPrimaryPublicIPAddress(ipAddress)
-                    .withExistingNetworkSecurityGroup(networkSecurityGroup)
-                    .create();
-            log.info("Provisioned network interface " + networkInterface.name());
-            webSocketDeploymentLogDto.setMessage("Provisioned network interface " + networkInterface.name());
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-
-            azureResourceManager
-                    .virtualMachines()
-                    .manager()
-                    .serviceClient()
-                    .getSshPublicKeys()
-                    .create(resourceGroup.name(),
-                            deploymentProperties.getPublicKeyName() + deploymentProperties.getNextResourceNumber(),
-                            new SshPublicKeyResourceInner()
-                                    .withLocation(deploymentProperties.getLocation()));
-            SshPublicKeyGenerateKeyPairResultInner sshPublicKeyGenerateKeyPairResultInner = azureResourceManager
-                    .virtualMachines()
-                    .manager()
-                    .serviceClient()
-                    .getSshPublicKeys()
-                    .generateKeyPair(resourceGroup.name(),
-                            deploymentProperties.getPublicKeyName() + deploymentProperties.getNextResourceNumber());
-            log.info("Provisioned ssh keys");
-            webSocketDeploymentLogDto.setMessage("Provisioned ssh keys");
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-
-            FileWriter fileWriter = new FileWriter(resourceGroup.name()
-                    + "_"
-                    + deploymentProperties.getVmName()
-                    + "_"
-                    + ipAddress.ipAddress()
-                    + ".pem");
-            fileWriter.write(sshPublicKeyGenerateKeyPairResultInner.privateKey());
-            fileWriter.close();
-
-            log.info("SSH key = " + sshPublicKeyGenerateKeyPairResultInner.privateKey());
-            webSocketDeploymentLogDto.setMessage("SSH KEY");
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-            webSocketDeploymentLogDto.setMessage(sshPublicKeyGenerateKeyPairResultInner.privateKey());
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-
-            log.info("Provisioning virtual machine, this might take a few minutes.");
-            webSocketDeploymentLogDto.setMessage("Provisioning virtual machine, this might take a few minutes.");
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-
-            SshPublicKey sshPublicKey = new SshPublicKey()
-                    .withPath("/home/" + deploymentProperties.getUsername() + "/.ssh/authorized_keys")
-                    .withKeyData(sshPublicKeyGenerateKeyPairResultInner.publicKey());
-            SshConfiguration sshConfiguration = new SshConfiguration()
-                    .withPublicKeys(Collections.singletonList(sshPublicKey));
-            LinuxConfiguration linuxConfiguration = new LinuxConfiguration()
-                    .withDisablePasswordAuthentication(true)
-                    .withSsh(sshConfiguration);
-
-
-            VirtualMachine virtualMachine = azureResourceManager.virtualMachines()
-                    .define(deploymentProperties.getVmName())
-                    .withRegion(deploymentProperties.getLocation())
-                    .withExistingResourceGroup(resourceGroup)
-                    .withExistingPrimaryNetworkInterface(networkInterface)
-                    .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_20_04_LTS_GEN2)
-                    .withRootUsername(deploymentProperties.getUsername())
-                    .withRootPassword(deploymentProperties.getPassword())
-                    .withSsh(sshPublicKey.keyData())
-                    .withComputerName(deploymentProperties.getComputerName() + deploymentProperties.getNextResourceNumber())
-                    .withSize(deploymentProperties.getVmSize())
-                    .create();
-
-            log.info("Provisioned virtual machine " + virtualMachine.name());
-            webSocketDeploymentLogDto.setMessage("Provisioned virtual machine " + virtualMachine.name());
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-
-            log.info("Running startup script.");
-            webSocketDeploymentLogDto.setMessage("Running startup script.");
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-            RunCommandInput runCommandInput = new RunCommandInput()
-                    .withCommandId("RunShellScript")
-                    .withScript(createScript());
-            RunCommandResult runCommandResult = azureResourceManager
-                    .virtualMachines()
-                    .runCommand(resourceGroup.name(), virtualMachine.name(), runCommandInput);
-
-            log.info("Initialize script result: ");
-            runCommandResult.value().forEach(l -> log.info(l.message()));
-
-            ProcessBuilder processBuilder = new
-                    ProcessBuilder("curl", "ipinfo.io/ip");
-            Process workerProcess = processBuilder.start();
-            workerProcess.waitFor();
-
-            BufferedReader bufferedReader = new BufferedReader(
-                    new InputStreamReader(
-                            workerProcess.getInputStream()
-                    ));
-            String backendIpAddress = "";
-            while ((backendIpAddress = bufferedReader.readLine()) != null) {
-                break;
-            }
-            webSocketDeploymentLogDto.setMessage("Starting SGX Validation between backend server located at "
-                    + backendIpAddress + " and target VM located at " + ipAddress.ipAddress());
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-
-            RunCommandInput startSGXClientCommand = new RunCommandInput()
-                    .withCommandId("RunShellScript")
-                    .withScript(createSgxClientScript(deploymentProperties.getVmName(), backendIpAddress));
-            RunCommandResult startSGXClientCommandResult = azureResourceManager
-                    .virtualMachines()
-                    .runCommand(resourceGroup.name(), virtualMachine.name(), startSGXClientCommand);
-            webSocketDeploymentLogDto.setMessage("");
-            startSGXClientCommandResult.value().forEach(result -> {
-                webSocketDeploymentLogDto.setMessage(result.message());
-                webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
-                log.info(result.message());
-            });
-            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+            runStartupScript(resourceGroup, virtualMachine, webSocketDeploymentLogDto);
+            runRemoteAttestation(publicIpAddress, resourceGroup, virtualMachine, webSocketDeploymentLogDto);
 
             responseDeploymentDto.setMessage("Deployment success!");
             responseDeploymentDto.setHttpCode(200);
@@ -416,35 +232,282 @@ public class DeploymentService {
     }
     private List<String> createSgxClientScript(String deploymentFileLocation, String backendIpLocation) {
         List<String> script = new ArrayList<>();
-        script.add("echo \"starting script\"");
         script.add("sudo su -");
-        script.add("echo \"before setting sample crypto\"");
         script.add("echo \"/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto\" > /etc/ld.so.conf.d/local.conf");
-        script.add("echo \"after setting sample\"");
         script.add("ldconfig");
-        script.add("echo \"after ldconfig\"");
-//        script.add("exit");
-        script.add("echo \"after exit\"");
         script.add("cd /home/azureuser/sgx-deployment-framework-remote-attestation");
-        script.add("echo \"after cd\"");
         script.add("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/sgxsdk/SampleCode/RemoteAttestation/sample_libcrypto");
-        script.add("echo \"after export\"");
         script.add("sudo chmod 777 ./run-client");
-        script.add("echo \"after run-client chmod\"");
         script.add("sudo chmod 777 ./run-server");
-        script.add("echo \"after run-server chmod\"");
         script.add("sudo chmod 777 ./client");
-        script.add("echo \"after client chmod\"");
         script.add("sudo chmod 777 ./sp");
-        script.add("echo \"after sp chmod\"");
         script.add("sudo chmod 777 ./mrsigner");
-        script.add("echo \"after mrsigned chmod\"");
         script.add("sudo ./run-client -a " + deploymentFileLocation  + " " + backendIpLocation + ":8085");
-        script.add("echo \"after run client exec\"");
         script.add("sudo chmod 777 ./" + deploymentFileLocation);
-        script.add("echo \"after file chmod\"");
         script.add("./" + deploymentFileLocation);
-        script.add("echo \"after execute file\"");
         return script;
+    }
+
+    private ResourceGroup provisionResourceGroupAndLog(final WebSocketDeploymentLogDto webSocketDeploymentLogDto) {
+        final ResourceGroup resourceGroup = azureResourceManager.resourceGroups()
+                .define(deploymentProperties.getResourceGroupName() + deploymentProperties.getNextResourceNumber())
+                .withRegion(deploymentProperties.getLocation())
+                .create();
+        log.info("Provisioned Resource Group " + resourceGroup.name());
+        webSocketDeploymentLogDto.setMessage("Provisioned Resource Group " + resourceGroup.name());
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        return resourceGroup;
+    }
+
+    private Network provisionNetworkAndLog(final ResourceGroup resourceGroup,
+                                           final WebSocketDeploymentLogDto webSocketDeploymentLogDto) {
+        final Network network = azureResourceManager.networks()
+                .define(deploymentProperties.getVnetName() + deploymentProperties.getNextResourceNumber())
+                .withRegion(deploymentProperties.getLocation())
+                .withExistingResourceGroup(resourceGroup)
+                .withAddressSpace(deploymentProperties.getVnetAddressSpace())
+                .withSubnet(deploymentProperties.getSubnetName() + deploymentProperties.getNextResourceNumber(),
+                        deploymentProperties.getSubnetAddressSpace())
+                .create();
+
+        log.info("Provisioned virtual network "
+                + network.name()
+                + " with address prefix "
+                + network.addressSpaces()
+                + " and Subnet Address space "
+                + deploymentProperties.getSubnetAddressSpace());
+        webSocketDeploymentLogDto.setMessage("Provisioned virtual network "
+                + network.name()
+                + " with address prefix "
+                + network.addressSpaces()
+                + " and Subnet Address space "
+                + deploymentProperties.getSubnetAddressSpace()
+        );
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        return network;
+    }
+
+    private PublicIpAddress provisionPublicIpAddressAndLog(final ResourceGroup resourceGroup,
+                                                           final WebSocketDeploymentLogDto webSocketDeploymentLogDto) {
+        final PublicIpAddress publicIpAddress = azureResourceManager.publicIpAddresses()
+                .define(deploymentProperties.getIpName() + deploymentProperties.getNextResourceNumber())
+                .withRegion(deploymentProperties.getLocation())
+                .withExistingResourceGroup(resourceGroup)
+                .withStaticIP()
+                .withSku(PublicIPSkuType.STANDARD)
+                .withIpAddressVersion(IpVersion.IPV4)
+                .create();
+
+        log.info("Provisioned ip address "
+                + publicIpAddress.name()
+                + " with address "
+                + publicIpAddress.ipAddress());
+        webSocketDeploymentLogDto.setMessage("Provisioned ip address "
+                + publicIpAddress.name()
+                + " with address "
+                + publicIpAddress.ipAddress());
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        return publicIpAddress;
+    }
+
+    private NetworkSecurityGroup provisionNetworkSecurityGroupAndLog(final ResourceGroup resourceGroup,
+                                                                     final WebSocketDeploymentLogDto webSocketDeploymentLogDto) {
+        final NetworkSecurityGroup networkSecurityGroup = azureResourceManager.networkSecurityGroups()
+                .define(deploymentProperties.getNsgName() + deploymentProperties.getNextResourceNumber())
+                .withRegion(deploymentProperties.getLocation())
+                .withExistingResourceGroup(resourceGroup)
+                .defineRule(deploymentProperties.getSecurityRuleInboundName())
+                .allowInbound()
+                .fromAnyAddress()
+                .fromAnyPort()
+                .toAnyAddress()
+                .toAnyPort()
+                .withProtocol(SecurityRuleProtocol.TCP)
+                .withPriority(deploymentProperties.getSecurityRulePriority())
+                .withDescription(deploymentProperties.getSecurityRuleInboundDescription())
+                .attach()
+                .defineRule(deploymentProperties.getSecurityRuleOutboundName())
+                .allowOutbound()
+                .fromAnyAddress()
+                .fromAnyPort()
+                .toAnyAddress()
+                .toAnyPort()
+                .withProtocol(SecurityRuleProtocol.TCP)
+                .withPriority(deploymentProperties.getSecurityRulePriority())
+                .withDescription(deploymentProperties.getSecurityRuleOutboundDescription())
+                .attach()
+                .create();
+
+        log.info("Provisioned Network Security group " + networkSecurityGroup.name());
+        webSocketDeploymentLogDto.setMessage("Provisioned Network Security group " + networkSecurityGroup.name());
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        return networkSecurityGroup;
+    }
+
+    private NetworkInterface provisionNetworkInterfaceAndLog(final ResourceGroup resourceGroup,
+                                                             final Network network,
+                                                             final PublicIpAddress publicIpAddress,
+                                                             final NetworkSecurityGroup networkSecurityGroup,
+                                                             final WebSocketDeploymentLogDto webSocketDeploymentLogDto) {
+        final NetworkInterface networkInterface = azureResourceManager.networkInterfaces()
+                .define(deploymentProperties.getNicName() + deploymentProperties.getNextResourceNumber())
+                .withRegion(deploymentProperties.getLocation())
+                .withExistingResourceGroup(resourceGroup)
+                .withExistingPrimaryNetwork(network)
+                .withSubnet(deploymentProperties.getSubnetName() + deploymentProperties.getNextResourceNumber())
+                .withPrimaryPrivateIPAddressDynamic()
+                .withExistingPrimaryPublicIPAddress(publicIpAddress)
+                .withExistingNetworkSecurityGroup(networkSecurityGroup)
+                .create();
+
+        log.info("Provisioned network interface " + networkInterface.name());
+        webSocketDeploymentLogDto.setMessage("Provisioned network interface " + networkInterface.name());
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        return networkInterface;
+    }
+
+    private SshPublicKey provisionSshPublicKeyAndLog(final ResourceGroup resourceGroup,
+                                                     final PublicIpAddress publicIpAddress,
+                                                     final WebSocketDeploymentLogDto webSocketDeploymentLogDto) throws IOException {
+        azureResourceManager
+                .virtualMachines()
+                .manager()
+                .serviceClient()
+                .getSshPublicKeys()
+                .create(resourceGroup.name(),
+                        deploymentProperties.getPublicKeyName() + deploymentProperties.getNextResourceNumber(),
+                        new SshPublicKeyResourceInner()
+                                .withLocation(deploymentProperties.getLocation()));
+        final SshPublicKeyGenerateKeyPairResultInner sshPublicKeyGenerateKeyPairResultInner = azureResourceManager
+                .virtualMachines()
+                .manager()
+                .serviceClient()
+                .getSshPublicKeys()
+                .generateKeyPair(resourceGroup.name(),
+                        deploymentProperties.getPublicKeyName() + deploymentProperties.getNextResourceNumber());
+        log.info("Provisioned ssh keys");
+        webSocketDeploymentLogDto.setMessage("Provisioned ssh keys");
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        FileWriter fileWriter = new FileWriter(resourceGroup.name()
+                + "_"
+                + deploymentProperties.getVmName()
+                + "_"
+                + publicIpAddress.ipAddress()
+                + ".pem");
+        fileWriter.write(sshPublicKeyGenerateKeyPairResultInner.privateKey());
+        fileWriter.close();
+
+        log.info("SSH key = " + sshPublicKeyGenerateKeyPairResultInner.privateKey());
+        webSocketDeploymentLogDto.setMessage("SSH KEY");
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+        webSocketDeploymentLogDto.setMessage(sshPublicKeyGenerateKeyPairResultInner.privateKey());
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        log.info("Provisioning virtual machine, this might take a few minutes.");
+        webSocketDeploymentLogDto.setMessage("Provisioning virtual machine, this might take a few minutes.");
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        SshPublicKey sshPublicKey = new SshPublicKey()
+                .withPath("/home/" + deploymentProperties.getUsername() + "/.ssh/authorized_keys")
+                .withKeyData(sshPublicKeyGenerateKeyPairResultInner.publicKey());
+        SshConfiguration sshConfiguration = new SshConfiguration()
+                .withPublicKeys(Collections.singletonList(sshPublicKey));
+        LinuxConfiguration linuxConfiguration = new LinuxConfiguration()
+                    .withDisablePasswordAuthentication(true)
+                    .withSsh(sshConfiguration);
+        return sshPublicKey;
+    }
+
+    private VirtualMachine provisionVirtualMachineAndLog(final ResourceGroup resourceGroup,
+                                                         final NetworkInterface networkInterface,
+                                                         final SshPublicKey sshPublicKey,
+                                                         final WebSocketDeploymentLogDto webSocketDeploymentLogDto) {
+        final VirtualMachine virtualMachine = azureResourceManager.virtualMachines()
+                .define(deploymentProperties.getVmName())
+                .withRegion(deploymentProperties.getLocation())
+                .withExistingResourceGroup(resourceGroup)
+                .withExistingPrimaryNetworkInterface(networkInterface)
+                .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_20_04_LTS_GEN2)
+                .withRootUsername(deploymentProperties.getUsername())
+                .withRootPassword(deploymentProperties.getPassword())
+                .withSsh(sshPublicKey.keyData())
+                .withComputerName(deploymentProperties.getComputerName() + deploymentProperties.getNextResourceNumber())
+                .withSize(deploymentProperties.getVmSize())
+                .create();
+
+        log.info("Provisioned virtual machine " + virtualMachine.name());
+        webSocketDeploymentLogDto.setMessage("Provisioned virtual machine " + virtualMachine.name());
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        return virtualMachine;
+    }
+
+    private void runStartupScript(final ResourceGroup resourceGroup,
+                                  final VirtualMachine virtualMachine,
+                                  final WebSocketDeploymentLogDto webSocketDeploymentLogDto) {
+        log.info("Running startup script.");
+        webSocketDeploymentLogDto.setMessage("Running startup script.");
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        RunCommandInput runCommandInput = new RunCommandInput()
+                .withCommandId("RunShellScript")
+                .withScript(createStartupScript());
+        RunCommandResult runCommandResult = azureResourceManager
+                .virtualMachines()
+                .runCommand(resourceGroup.name(), virtualMachine.name(), runCommandInput);
+
+        log.info("Initialize script result: ");
+        runCommandResult.value().forEach(l -> log.info(l.message()));
+    }
+
+    @SneakyThrows
+    private void runRemoteAttestation(final PublicIpAddress publicIpAddress,
+                                      final ResourceGroup resourceGroup,
+                                      final VirtualMachine virtualMachine,
+                                      final WebSocketDeploymentLogDto webSocketDeploymentLogDto) {
+
+        final String backendIpAddress = retrieveBackendIpAddress();
+        webSocketDeploymentLogDto.setMessage("Starting SGX Validation between backend server located at "
+                + backendIpAddress + " and target VM located at " + publicIpAddress.ipAddress());
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+
+        RunCommandInput startSGXClientCommand = new RunCommandInput()
+                .withCommandId("RunShellScript")
+                .withScript(createSgxClientScript(deploymentProperties.getVmName(), backendIpAddress));
+        RunCommandResult startSGXClientCommandResult = azureResourceManager
+                .virtualMachines()
+                .runCommand(resourceGroup.name(), virtualMachine.name(), startSGXClientCommand);
+
+        webSocketDeploymentLogDto.setMessage("");
+        startSGXClientCommandResult.value().forEach(result -> {
+            webSocketDeploymentLogDto.setMessage(result.message());
+            webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+            log.info(result.message());
+        });
+        webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
+    }
+
+    @SneakyThrows
+    private String retrieveBackendIpAddress() {
+        ProcessBuilder processBuilder = new
+                ProcessBuilder("curl", "ipinfo.io/ip");
+        Process workerProcess = processBuilder.start();
+        workerProcess.waitFor();
+
+        BufferedReader bufferedReader = new BufferedReader(
+                new InputStreamReader(
+                        workerProcess.getInputStream()
+                ));
+        String backendIpAddress = "";
+        while ((backendIpAddress = bufferedReader.readLine()) != null) {
+            break;
+        }
+        return backendIpAddress;
     }
 }
