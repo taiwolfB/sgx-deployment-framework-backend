@@ -209,18 +209,17 @@ public class DeploymentService {
                                 + "_"
                                 + virtualMachine.getPrimaryPublicIPAddress().ipAddress()
                                 + ".pem");
-                        Scanner fileReader = null;
-                        fileReader = new Scanner(pemFile);
+                        Scanner fileReader = new Scanner(pemFile);
                         while (fileReader.hasNextLine()) {
                             sshKey =  sshKey.concat(fileReader.nextLine() + "\n");
                         }
                         fileReader.close();
-                        deployedApplicationDto.setSshKey(sshKey);
-                        deployedApplications.add(deployedApplicationDto);
-                    } catch (FileNotFoundException e) {
+                    } catch (Exception e) {
                         sshKey = "PEM FILE MIGHT HAVE BEEN DELETED FROM THE SYSTEM. PLEASE CONTACT AN ADMINISTRATOR.";
                         log.error("PEM FILE MIGHT HAVE BEEN DELETED FROM THE SYSTEM. PLEASE CONTACT AN ADMINISTRATOR");
                     }
+                    deployedApplicationDto.setSshKey(sshKey);
+                    deployedApplications.add(deployedApplicationDto);
                 }
             });
             return deployedApplications;
