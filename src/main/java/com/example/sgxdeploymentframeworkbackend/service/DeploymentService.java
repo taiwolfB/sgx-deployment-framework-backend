@@ -202,25 +202,25 @@ public class DeploymentService {
                     deployedApplicationDto.setVirtualMachineIp(virtualMachine.getPrimaryPublicIPAddress().ipAddress());
                     deployedApplicationDto.setSshUsername(deploymentProperties.getUsername());
                     String sshKey = "";
-                    File pemFile = new File(virtualMachine.resourceGroupName()
-                            + "_"
-                            + virtualMachine.name()
-                            + "_"
-                            + virtualMachine.getPrimaryPublicIPAddress().ipAddress()
-                            + ".pem");
-                    Scanner fileReader = null;
                     try {
+                        File pemFile = new File(virtualMachine.resourceGroupName()
+                                + "_"
+                                + virtualMachine.name()
+                                + "_"
+                                + virtualMachine.getPrimaryPublicIPAddress().ipAddress()
+                                + ".pem");
+                        Scanner fileReader = null;
                         fileReader = new Scanner(pemFile);
+                        while (fileReader.hasNextLine()) {
+                            sshKey =  sshKey.concat(fileReader.nextLine() + "\n");
+                        }
+                        fileReader.close();
+                        deployedApplicationDto.setSshKey(sshKey);
+                        deployedApplications.add(deployedApplicationDto);
                     } catch (FileNotFoundException e) {
                         sshKey = "PEM FILE MIGHT HAVE BEEN DELETED FROM THE SYSTEM. PLEASE CONTACT AN ADMINISTRATOR.";
                         log.error("PEM FILE MIGHT HAVE BEEN DELETED FROM THE SYSTEM. PLEASE CONTACT AN ADMINISTRATOR");
                     }
-                    while (fileReader.hasNextLine()) {
-                        sshKey =  sshKey.concat(fileReader.nextLine() + "\n");
-                    }
-                    fileReader.close();
-                    deployedApplicationDto.setSshKey(sshKey);
-                    deployedApplications.add(deployedApplicationDto);
                 }
             });
             return deployedApplications;
@@ -230,6 +230,7 @@ public class DeploymentService {
             return deployedApplications;
         }
     }
+
     private List<String> createSgxClientScript(String deploymentFileLocation, String backendIpLocation) {
         List<String> script = new ArrayList<>();
         script.add("sudo su -");
