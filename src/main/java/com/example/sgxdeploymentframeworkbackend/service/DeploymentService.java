@@ -203,7 +203,13 @@ public class DeploymentService {
                     deployedApplicationDto.setSshUsername(deploymentProperties.getUsername());
                     String sshKey = "";
                     try {
-                        File pemFile = new File(virtualMachine.resourceGroupName()
+                        File pemFile = new File(virtualMachine.resourceGroupName().toUpperCase()
+                                + "_"
+                                + virtualMachine.name()
+                                + "_"
+                                + virtualMachine.getPrimaryPublicIPAddress().ipAddress()
+                                + ".pem");
+                        log.info(virtualMachine.resourceGroupName()
                                 + "_"
                                 + virtualMachine.name()
                                 + "_"
@@ -394,7 +400,7 @@ public class DeploymentService {
         webSocketDeploymentLogDto.setMessage("Provisioned ssh keys");
         webSocketListener.pushSystemStatusToDeploymentLogsWebSocket(webSocketDeploymentLogDto);
 
-        FileWriter fileWriter = new FileWriter(resourceGroup.name()
+        FileWriter fileWriter = new FileWriter(resourceGroup.name().toUpperCase()
                 + "_"
                 + deploymentProperties.getVmName()
                 + "_"
